@@ -42,6 +42,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card.done{border-color:var(--gbdr);background:var(--gbg)}
 .card.absent{border-color:#F09595;background:#FCEBEB}
 .card.urgent{border-color:#FAC775;background:#FAEEDA}
+.card.custom{border-style:dashed}
 @media(prefers-color-scheme:dark){.card.done{background:#0a2e20}.card.absent{background:#2e0a0a}.card.urgent{background:#2e2000}}
 .card-top{display:flex;align-items:center;gap:7px;margin-bottom:7px}
 .av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;background:var(--bg3);color:var(--text2)}
@@ -72,6 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card-footer{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
 .edbtn{font-size:11px;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:var(--r);border:0.5px solid var(--border);background:var(--bg2)}
 .edbtn:hover{border-color:var(--g);color:var(--g)}
+.custom-badge{font-size:10px;color:#854F0B;background:#FAEEDA;border:0.5px solid #FAC775;border-radius:20px;padding:1px 6px}
 .empty{font-size:13px;color:var(--text3);padding:8px 2px}
 .loading{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
@@ -94,7 +96,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .stutop{display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .stunm{font-size:17px;font-weight:600}
 .stucls{font-size:12px;color:var(--text2);background:var(--bg2);padding:2px 8px;border-radius:var(--r)}
-.sec-ttl{font-size:12px;color:var(--text2);margin-top:14px;margin-bottom:6px;font-weight:500}
+/* 토글 스위치 */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:var(--r);border:0.5px solid var(--border);margin-top:12px}
+.toggle-label{font-size:13px;color:var(--text);font-weight:500}
+.toggle-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--bg3);border-radius:11px;cursor:pointer;transition:.2s;border:0.5px solid var(--border2)}
+.toggle input:checked+.toggle-slider{background:var(--g);border-color:var(--g2)}
+.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+/* 기본 모드 — 시작요일 */
+.start-section{margin-top:12px}
+.sec-ttl{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+/* 개별 모드 — 일차별 */
+.custom-section{margin-top:12px;display:none}
+.custom-section.show{display:block}
 .drow{padding:8px 0;border-bottom:0.5px solid var(--border)}
 .drow:last-child{border-bottom:none}
 .drow-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -138,16 +155,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div id="main"><div class="loading">🔄 데이터 불러오는 중...</div></div>
 </div>
 
+<!-- 학생 상세 모달 -->
 <div class="modal-bg" id="sm">
   <div class="modal">
     <div class="stutop"><span class="stunm" id="smn"></span><span class="stucls" id="smc"></span></div>
+
+    <!-- 마감 시간 -->
     <div class="dlrow">
       <label>마감</label>
       <input type="time" id="smdt" onchange="saveDl()">
       <span class="dlnote" id="smdn"></span>
     </div>
-    <div class="sec-ttl">일차별 요일 · 제출 현황 <span style="font-weight:400;color:var(--text3)">(요일 버튼으로 개별 변경 가능)</span></div>
-    <div id="smdy"></div>
+
+    <!-- 개별 일정 토글 -->
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">개별 일정 지정</div>
+        <div class="toggle-sub">켜면 일차마다 요일을 따로 설정할 수 있어요</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="custom-toggle" onchange="onToggleCustom()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- 기본 모드: 시작 요일 -->
+    <div class="start-section" id="start-section">
+      <div class="sec-ttl">시작 요일 <span style="font-weight:400;color:var(--text3)">— 이후 5일 자동 배정</span></div>
+      <div class="dg7" id="smst"></div>
+    </div>
+
+    <!-- 개별 모드: 일차별 요일 선택 -->
+    <div class="custom-section" id="custom-section">
+      <div class="sec-ttl">일차별 요일 개별 설정</div>
+      <div id="smdy"></div>
+    </div>
+
+    <!-- 일차별 제출 현황 (공통) -->
+    <div style="margin-top:14px">
+      <div class="sec-ttl">제출 현황</div>
+      <div id="smcheck"></div>
+    </div>
+
     <div class="reset-confirm" id="reset-confirm" style="display:none">
       정말 이 학생의 제출 기록을 모두 초기화할까요?
       <div class="mbtns" style="margin-top:8px">
@@ -163,6 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- 학생 명단 모달 -->
 <div class="modal-bg" id="rm">
   <div class="modal">
     <h3>학생 명단 편집</h3>
@@ -204,33 +254,40 @@ function makeDays(startDay){return Array.from({length:5},(_,i)=>(startDay+i)%7);
 const DEF_CLASSES=['31기','32기'];
 const DEF_STUDENTS={
   '31기':[
-    {name:'다은',gen:'31기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
-    {name:'이안',gen:'31기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'23:30'},
-    {name:'하은',gen:'31기',days:makeDays(6),checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
-    {name:'채현',gen:'31기',days:makeDays(5),checks:[false,false,false,false,false],absent:false,deadline:'23:30'},
-    {name:'지인',gen:'31기',days:makeDays(5),checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
+    {name:'다은',gen:'31기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
+    {name:'이안',gen:'31기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'23:30'},
+    {name:'하은',gen:'31기',startDay:6,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
+    {name:'채현',gen:'31기',startDay:5,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'23:30'},
+    {name:'지인',gen:'31기',startDay:5,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
   ],
   '32기':[
-    {name:'서영',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'18:00'},
-    {name:'채원',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
-    {name:'나윤',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
-    {name:'하언',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
-    {name:'서욱',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'02:00'},
-    {name:'찬영',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
-    {name:'현준',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
-    {name:'이삭',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
-    {name:'하윤',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'01:30'},
-    {name:'시연',gen:'32기',days:makeDays(4),checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
+    {name:'서영',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'18:00'},
+    {name:'채원',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
+    {name:'나윤',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
+    {name:'하언',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:30'},
+    {name:'서욱',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'02:00'},
+    {name:'찬영',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
+    {name:'현준',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
+    {name:'이삭',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
+    {name:'하윤',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'01:30'},
+    {name:'시연',gen:'32기',startDay:4,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:'00:00'},
   ]
 };
 
 let C=[],S={},fm='all',MT=null,rstDay=0;
 
-function setSS(s){
+// 유효 요일 배열 반환 (customDays 있으면 그걸, 없으면 startDay 기준 연속 5일)
+function getDays(s){
+  if(s.customDays) return Object.values(s.customDays).map(Number);
+  return makeDays(s.startDay||0);
+}
+function isCustom(s){return !!s.customDays;}
+
+function setSS(st){
   const dot=document.getElementById('dot'),t=document.getElementById('stxt');
-  if(s==='ok'){dot.className='dot ok';t.textContent='실시간 연결됨';}
-  else if(s==='saving'){dot.className='dot';t.textContent='저장 중...';}
-  else if(s==='err'){dot.className='dot err';t.textContent='연결 오류';}
+  if(st==='ok'){dot.className='dot ok';t.textContent='실시간 연결됨';}
+  else if(st==='saving'){dot.className='dot';t.textContent='저장 중...';}
+  else if(st==='err'){dot.className='dot err';t.textContent='연결 오류';}
   else{dot.className='dot';t.textContent='연결 중...';}
 }
 function tdi(){const d=new Date().getDay();return d===0?6:d-1;}
@@ -247,7 +304,7 @@ function isUrg(s){
   dl.setHours(h,m,0,0);return(dl-now)>0&&(dl-now)<=36e5;
 }
 function allDone(s){return s.checks.every(Boolean);}
-function todaySlot(s){return(s.days||[]).indexOf(tdi());}
+function todaySlot(s){return getDays(s).indexOf(tdi());}
 
 function saveAll(){
   setSS('saving');
@@ -259,11 +316,15 @@ function saveStu(cls,idx){
 }
 function normStu(s){
   const checks=s.checks?Object.values(s.checks):[false,false,false,false,false];
-  let days;
-  if(s.days) days=Object.values(s.days).map(Number);
-  else if(s.startDay!=null) days=makeDays(s.startDay);
-  else days=makeDays(4);
-  return{...s,checks,days};
+  // customDays 정규화
+  let customDays=null;
+  if(s.customDays) customDays=Object.values(s.customDays).map(Number);
+  else if(s.days && !s.startDay) {
+    // 이전 버전(days 필드) → customDays로 마이그레이션
+    customDays=Object.values(s.days).map(Number);
+  }
+  const startDay=s.startDay!=null?s.startDay:4;
+  return{...s, checks, customDays, startDay, days:undefined};
 }
 
 onValue(ref(db,'data'),snap=>{
@@ -280,7 +341,7 @@ onValue(ref(db,'data'),snap=>{
     saveAll();
   }
   setSS('ok');render();
-  if(MT)rSMdy();
+  if(MT) refreshModal();
 },()=>setSS('err'));
 
 function setF(f){
@@ -305,16 +366,16 @@ function render(){
     else{
       html+=`<div class="grid">`;
       list.forEach(s=>{
-        const ri=all.indexOf(s),ts=todaySlot(s);
-        const dn=allDone(s),ab=s.absent,ug=isUrg(s),dl=dlLbl(s.deadline);
-        const pips=(s.days||[]).map((di,i)=>{
+        const ri=all.indexOf(s),days=getDays(s),ts=todaySlot(s);
+        const dn=allDone(s),ab=s.absent,ug=isUrg(s),dl=dlLbl(s.deadline),cust=isCustom(s);
+        const pips=days.map((di,i)=>{
           const ck=s.checks[i],it=i===ts;
           return `<div class="pip${ck?' ck':''}${it?' td':''}" onclick="togPip('${cls}',${ri},${i})"><span class="pn">${i+1}</span><span class="pd">${W[di]}</span></div>`;
         }).join('');
-        html+=`<div class="card${dn&&!ab?' done':''}${ab?' absent':''}${ug?' urgent':''}">
+        html+=`<div class="card${dn&&!ab?' done':''}${ab?' absent':''}${ug?' urgent':''}${cust?' custom':''}">
           <div class="card-top">
             <div class="av">${s.name[0]}</div>
-            <div class="ng"><span class="sname">${s.name}</span><span class="gtag">${s.gen}</span></div>
+            <div class="ng"><span class="sname">${s.name}</span><span class="gtag">${s.gen}</span>${cust?'<span class="custom-badge">개별</span>':''}</div>
             ${dl?`<span class="dbadge" onclick="openSM('${cls}',${ri})">⏰ ${dl}</span>`:''}
           </div>
           <div class="pips">${pips}</div>
@@ -335,27 +396,52 @@ window.togPip=function(cls,idx,slot){
   const s=S[cls][idx];if(s.absent)return;
   s.checks[slot]=!s.checks[slot];saveStu(cls,idx);render();
 };
+
 window.openSM=function(cls,idx){
-  MT={cls,idx};const s=S[cls][idx];
+  MT={cls,idx};
+  const s=S[cls][idx];
   document.getElementById('smn').textContent=s.name;
   document.getElementById('smc').textContent=s.gen;
   document.getElementById('smab').textContent=s.absent?'결석 해제':'결석 처리';
   document.getElementById('smdt').value=s.deadline||'';
   document.getElementById('smdn').textContent=dlLbl(s.deadline);
   document.getElementById('reset-confirm').style.display='none';
-  rSMdy();
+  document.getElementById('custom-toggle').checked=isCustom(s);
+  refreshModal();
   document.getElementById('sm').classList.add('show');
 };
-function rSMdy(){
+
+function refreshModal(){
   if(!MT)return;
-  const{cls,idx}=MT,s=S[cls][idx],ts=todaySlot(s);
-  document.getElementById('smdy').innerHTML=(s.days||[]).map((dayIdx,i)=>{
-    const ck=s.checks[i],it=i===ts;
+  const s=S[MT.cls][MT.idx];
+  const cust=isCustom(s);
+  document.getElementById('start-section').style.display=cust?'none':'block';
+  document.getElementById('custom-section').classList.toggle('show',cust);
+  if(!cust) rSMstart();
+  else rSMdy();
+  rSMcheck();
+}
+
+function rSMstart(){
+  const s=S[MT.cls][MT.idx];
+  document.getElementById('smst').innerHTML=W.map((d,i)=>
+    `<div class="dgb${s.startDay===i?' on':''}" onclick="setStuStart(${i})">${d}</div>`
+  ).join('');
+}
+window.setStuStart=function(i){
+  const{cls,idx}=MT;
+  S[cls][idx].startDay=i;
+  saveStu(cls,idx);rSMstart();rSMcheck();render();
+};
+
+function rSMdy(){
+  const{cls,idx}=MT,s=S[cls][idx],days=getDays(s),ts=todaySlot(s);
+  document.getElementById('smdy').innerHTML=days.map((dayIdx,i)=>{
+    const it=i===ts;
     const dayBtns=W.map((d,di)=>`<div class="dpb${dayIdx===di?' on':''}" onclick="setDaySlot(${i},${di})">${d}</div>`).join('');
     return `<div class="drow">
       <div class="drow-top">
         <span class="dlbl">${i+1}일차${it?'<span class="cm"> ◀오늘</span>':''}</span>
-        <button class="ds${ck?' ok':''}" onclick="togSlot(${i})">${ck?'✓ 제출':'미제출'}</button>
       </div>
       <div class="dpicker">${dayBtns}</div>
     </div>`;
@@ -363,13 +449,42 @@ function rSMdy(){
 }
 window.setDaySlot=function(slotIdx,dayIdx){
   const{cls,idx}=MT;
-  S[cls][idx].days[slotIdx]=dayIdx;
+  if(!S[cls][idx].customDays) S[cls][idx].customDays=getDays(S[cls][idx]);
+  S[cls][idx].customDays[slotIdx]=dayIdx;
   saveStu(cls,idx);rSMdy();render();
 };
+
+function rSMcheck(){
+  const{cls,idx}=MT,s=S[cls][idx],days=getDays(s),ts=todaySlot(s);
+  document.getElementById('smcheck').innerHTML=days.map((dayIdx,i)=>{
+    const ck=s.checks[i],it=i===ts;
+    return `<div class="drow">
+      <div class="drow-top">
+        <span class="dlbl">${i+1}${W[dayIdx]}${it?'<span class="cm"> ◀오늘</span>':''}</span>
+        <button class="ds${ck?' ok':''}" onclick="togSlot(${i})">${ck?'✓ 제출':'미제출'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 window.togSlot=function(i){
   const{cls,idx}=MT;S[cls][idx].checks[i]=!S[cls][idx].checks[i];
-  rSMdy();saveStu(cls,idx);render();
+  rSMcheck();saveStu(cls,idx);render();
 };
+
+window.onToggleCustom=function(){
+  const{cls,idx}=MT;
+  const s=S[cls][idx];
+  const on=document.getElementById('custom-toggle').checked;
+  if(on){
+    // 개별 모드 켜기: startDay 기준 days를 customDays로 복사
+    S[cls][idx].customDays=[...makeDays(s.startDay)];
+  } else {
+    // 개별 모드 끄기: customDays 삭제
+    S[cls][idx].customDays=null;
+  }
+  saveStu(cls,idx);refreshModal();render();
+};
+
 window.saveDl=function(){
   const{cls,idx}=MT,v=document.getElementById('smdt').value;
   S[cls][idx].deadline=v;document.getElementById('smdn').textContent=dlLbl(v);
@@ -387,9 +502,10 @@ window.doReset=function(){
   S[cls][idx].absent=false;
   document.getElementById('reset-confirm').style.display='none';
   document.getElementById('smab').textContent='결석 처리';
-  rSMdy();saveStu(cls,idx);render();
+  rSMcheck();saveStu(cls,idx);render();
 };
 window.closeSM=function(){document.getElementById('sm').classList.remove('show');MT=null;};
+
 window.openRoster=function(){
   const sel=document.getElementById('rc');
   sel.innerHTML=C.map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -409,7 +525,7 @@ window.saveRoster=function(){
   const ex=S[cls]||[];
   S[cls]=names.map(name=>{
     const f=ex.find(s=>s.name===name);
-    return f||{name,gen:cls,days:makeDays(rstDay),checks:[false,false,false,false,false],absent:false,deadline:dl};
+    return f||{name,gen:cls,startDay:rstDay,customDays:null,checks:[false,false,false,false,false],absent:false,deadline:dl};
   });
   closeRM();saveAll();render();
 };
