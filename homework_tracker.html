@@ -315,16 +315,21 @@ function saveStu(cls,idx){
   set(ref(db,`data/students/${cls}/${idx}`),S[cls][idx]).then(()=>setSS('ok')).catch(()=>setSS('err'));
 }
 function normStu(s){
-  const checks=s.checks?Object.values(s.checks):[false,false,false,false,false];
-  // customDays 정규화
+  const checks=s.checks?Object.values(s.checks).map(v=>!!v):[false,false,false,false,false];
   let customDays=null;
-  if(s.customDays) customDays=Object.values(s.customDays).map(Number);
-  else if(s.days && !s.startDay) {
-    // 이전 버전(days 필드) → customDays로 마이그레이션
-    customDays=Object.values(s.days).map(Number);
+  let startDay=s.startDay!=null?Number(s.startDay):4;
+  if(s.customDays){
+    // 현재 버전
+    customDays=Object.values(s.customDays).map(Number);
+  } else if(s.days){
+    // 이전 버전: days 배열이 연속 5일이면 startDay로 변환, 아니면 customDays로
+    const dArr=Object.values(s.days).map(Number);
+    const isConsec=dArr.every((d,i)=>i===0||d===(dArr[i-1]+1)%7);
+    if(isConsec){startDay=dArr[0];}
+    else{customDays=dArr;}
   }
-  const startDay=s.startDay!=null?s.startDay:4;
-  return{...s, checks, customDays, startDay, days:undefined};
+  const result={name:s.name,gen:s.gen,startDay,customDays,checks,absent:!!s.absent,deadline:s.deadline||''};
+  return result;
 }
 
 onValue(ref(db,'data'),snap=>{
