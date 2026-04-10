@@ -375,11 +375,11 @@ function render(){
         html+=`<div class="card${dn&&!ab?' done':''}${ab?' absent':''}${ug?' urgent':''}${cust?' custom':''}">
           <div class="card-top">
             <div class="av">${s.name[0]}</div>
-            <div class="ng"><span class="sname">${s.name}</span><span class="gtag">${s.gen}</span>${cust?'<span class="custom-badge">개별</span>':''}</div>
+            <div class="ng"><span class="sname">${s.name}</span><span class="gtag">${s.gen}</span></div>
             ${dl?`<span class="dbadge" onclick="openSM('${cls}',${ri})">⏰ ${dl}</span>`:''}
           </div>
           <div class="pips">${pips}</div>
-          <div class="card-footer"><span class="edbtn" onclick="openSM('${cls}',${ri})">일정 조정</span></div>
+          <div class="card-footer">${cust?'<span class="custom-badge">개별일정</span>':''}<span class="edbtn" onclick="openSM('${cls}',${ri})">일정 조정</span></div>
         </div>`;
       });
       html+=`</div>`;
