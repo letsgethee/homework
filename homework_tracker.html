@@ -161,10 +161,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="stutop"><span class="stunm" id="smn"></span><span class="stucls" id="smc"></span></div>
 
     <!-- 마감 시간 -->
-    <div class="dlrow">
-      <label>마감</label>
-      <input type="time" id="smdt" onchange="saveDl()">
-      <span class="dlnote" id="smdn"></span>
+    <div class="dlrow" style="flex-wrap:wrap;gap:6px">
+      <label style="width:100%;margin:0 0 4px">마감 시간</label>
+      <input type="time" id="smdt" onchange="saveDl()" style="flex:1;min-width:80px">
+      <span style="font-size:12px;color:var(--text3);flex-shrink:0">~</span>
+      <input type="time" id="smdt2" onchange="saveDl()" style="flex:1;min-width:80px">
+      <span class="dlnote" id="smdn" style="width:100%;margin-top:2px"></span>
     </div>
 
     <!-- 개별 일정 토글 -->
@@ -291,15 +293,18 @@ function setSS(st){
   else{dot.className='dot';t.textContent='연결 중...';}
 }
 function tdi(){const d=new Date().getDay();return d===0?6:d-1;}
-function dlLbl(dl){
-  if(!dl)return '';
-  const[h,m]=dl.split(':').map(Number);
-  const nx=h<6,ts=m===0?`${h}시`:`${h}:${String(m).padStart(2,'0')}`;
-  return nx?`다음날 ${ts}`:`당일 ${ts}`;
+function fmtT(h,m){return m===0?`${h}시`:`${h}:${String(m).padStart(2,"0")}`;}
+function dlLbl(dl,dl2){
+  if(!dl)return "";
+  const[h,m]=dl.split(":").map(Number);
+  const nx=h<6,t1=fmtT(h,m);
+  if(dl2){const[h2,m2]=dl2.split(":").map(Number);const t2=fmtT(h2,m2);return nx?`다음날 ${t1}~${t2}`:`당일 ${t1}~${t2}`;}
+  return nx?`다음날 ${t1}`:`당일 ${t1}`;
 }
 function isUrg(s){
   if(!s.deadline||s.absent||s.checks.every(Boolean))return false;
-  const now=new Date();const[h,m]=s.deadline.split(':').map(Number);
+  const now=new Date();const dl2=s.deadline2||s.deadline;
+  const[h,m]=dl2.split(":").map(Number);
   let dl=new Date(now);if(h<6)dl.setDate(dl.getDate()+1);
   dl.setHours(h,m,0,0);return(dl-now)>0&&(dl-now)<=36e5;
 }
@@ -328,7 +333,7 @@ function normStu(s){
     if(isConsec){startDay=dArr[0];}
     else{customDays=dArr;}
   }
-  const result={name:s.name,gen:s.gen,startDay,customDays,checks,absent:!!s.absent,deadline:s.deadline||''};
+  const result={name:s.name,gen:s.gen,startDay,customDays,checks,absent:!!s.absent,deadline:s.deadline||'',deadline2:s.deadline2||''};
   return result;
 }
 
@@ -372,7 +377,7 @@ function render(){
       html+=`<div class="grid">`;
       list.forEach(s=>{
         const ri=all.indexOf(s),days=getDays(s),ts=todaySlot(s);
-        const dn=allDone(s),ab=s.absent,ug=isUrg(s),dl=dlLbl(s.deadline),cust=isCustom(s);
+        const dn=allDone(s),ab=s.absent,ug=isUrg(s),dl=dlLbl(s.deadline,s.deadline2),cust=isCustom(s);
         const pips=days.map((di,i)=>{
           const ck=s.checks[i],it=i===ts;
           return `<div class="pip${ck?' ck':''}${it?' td':''}" onclick="togPip('${cls}',${ri},${i})"><span class="pn">${i+1}</span><span class="pd">${W[di]}</span></div>`;
@@ -409,7 +414,8 @@ window.openSM=function(cls,idx){
   document.getElementById('smc').textContent=s.gen;
   document.getElementById('smab').textContent=s.absent?'결석 해제':'결석 처리';
   document.getElementById('smdt').value=s.deadline||'';
-  document.getElementById('smdn').textContent=dlLbl(s.deadline);
+  document.getElementById('smdt2').value=s.deadline2||'';
+  document.getElementById('smdn').textContent=dlLbl(s.deadline,s.deadline2);
   document.getElementById('reset-confirm').style.display='none';
   document.getElementById('custom-toggle').checked=isCustom(s);
   refreshModal();
@@ -491,8 +497,8 @@ window.onToggleCustom=function(){
 };
 
 window.saveDl=function(){
-  const{cls,idx}=MT,v=document.getElementById('smdt').value;
-  S[cls][idx].deadline=v;document.getElementById('smdn').textContent=dlLbl(v);
+  const{cls,idx}=MT,v=document.getElementById('smdt').value,v2=document.getElementById('smdt2').value;
+  S[cls][idx].deadline=v;S[cls][idx].deadline2=v2;document.getElementById('smdn').textContent=dlLbl(v,v2);
   saveStu(cls,idx);render();
 };
 window.togAbs=function(){
